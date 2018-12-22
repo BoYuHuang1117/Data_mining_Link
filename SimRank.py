@@ -1,7 +1,10 @@
 #Author: BoYu Huang
 #Date: 2018/12/21
-#Reference: 
+#Reference: https://github.com/chihsuan/link-analysis
 import pandas as pd
+import numpy as np 
+import itertools 
+import time 
 
 class Link:
     def __init__(self, name):
@@ -11,7 +14,6 @@ class Link:
         
     def add_ch(self,ch_list):
         self.ch = ch_list
-        print(self.ch)
         
     def add_pa(self,pa_list):
         self.pa = pa_list
@@ -41,4 +43,30 @@ def creategraph(data):
     
     return totalnode, subgraph
     
-def 
+def SimRank(subgraph,totalnode, C=0.9, iteration=10):
+    sim = np.identity(len(totalnode))
+    old_sim = np.zeros(len(totalnode))
+    for itr in range(int(iteration)):
+        old_sim = np.copy(sim)
+        for a, b in itertools.product(totalnode, totalnode):
+            if a is b or subgraph[a].pa == None or subgraph[b].pa == None:
+                continue
+            s_ab = 0
+            for na in subgraph[a].pa:
+                for nb in subgraph[b].pa:
+                    s_ab += old_sim[int(na)-1][int(nb)-1]
+            sim[int(a)-1][int(b)-1] =  s_ab * C / (len(subgraph[a].pa) * len(subgraph[b].pa))
+
+    return sim
+
+data = pd.read_csv('example.txt',header = -1)
+data.columns = ['first node', 'second node']
+
+totalnode, subgraph = creategraph(data)
+
+start = time.time()
+sim = SimRank(subgraph, totalnode)
+end = time.time()
+
+t1 = end - start
+print("Using time: ", t1)
